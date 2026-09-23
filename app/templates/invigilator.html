@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Giám Thị - Điểm Danh & Giám Sát Phòng Thi</title>
+  <link rel="stylesheet" href="/static/css/style.css?v={{ range(1000, 9999)|random }}">
+  <style>
+    /* =========================================================
+       DANH SÁCH THÍ SINH & THEME GIÁM THỊ (LIST VIEW + MOBILE)
+       ========================================================= */
+    :root {
+      --primary: #004b87;
+      --primary-hover: #003666;
+      --primary-light: #e0f2fe;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --slate: #475569;
+      --slate-light: #f1f5f9;
+      --border: #e2e8f0;
+      --surface: #ffffff;
+      --bg: #f8fafc;
+    }
+
+    body {
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    }
+
+    .main-container {
+      max-width: 1400px;
+      width: 96%;
+      margin: 1.25rem auto 3rem;
+    }
+
+    /* 1. Control Bar & KPI */
+    .session-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.25rem;
+      box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .selector-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .selector-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .selector-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--slate);
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .select-box {
+      padding: 0.55rem 0.9rem;
+      border-radius: 0.55rem;
+      border: 1.5px solid var(--border);
+      background: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #0f172a;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .select-box:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 75, 135, 0.1);
+    }
+
+    .session-header-info {
+      border-left: 2px solid var(--border);
+      padding-left: 1rem;
+    }
+
+    .session-info-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 0;
+    }
+
+    /* KPI Cards */
+    .session-stats {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-kpi-card {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.9rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .stat-kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+
+    .stat-kpi-card.active-kpi {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .stat-kpi-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      flex-shrink: 0;
+    }
+
+    .stat-kpi-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-kpi-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--slate);
+      text-transform: uppercase;
+      line-height: 1.2;
+    }
+
+    .stat-kpi-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    /* 2. Search & Filter Bar */
+    .search-filter-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 250px;
+      max-width: 480px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.95rem;
+      color: var(--slate);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.55rem 1rem 0.55rem 2.4rem;
+      border: 1.5px solid var(--border);
+      border-radius: 0.55rem;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 75, 135, 0.1);
+    }
+
+    .filter-pills-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.45rem 0.85rem;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--slate);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .filter-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* 3. Candidate List / Table */
+    .table-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      overflow: hidden;
+      box-shadow: 0 4px 15px -3px rgba(0,0,0,0.04);
+    }
+
+    .candidate-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .candidate-table th {
+      background: #f8fafc;
+      padding: 0.85rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #475569;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .candidate-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    .candidate-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .candidate-table tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .candidate-table tbody tr.row-alert {
+      background-color: #fff5f5;
+    }
+
+    .candidate-table tbody tr.row-alert:hover {
+      background-color: #fee2e2;
+    }
+
+    /* Table elements */
+    .student-profile-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .student-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .student-info-col {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .student-name {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 0.9rem;
+    }
+
+    .student-mssv {
+      font-size: 0.75rem;
+      color: var(--slate);
+      font-weight: 500;
+    }
+
+    .pc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.55rem;
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .pc-badge.online {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #065f46;
+    }
+
+    /* Thumbnail snapshot */
+    .snapshot-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .snapshot-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 0.45rem;
+      object-fit: cover;
+      border: 1.5px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .snapshot-thumb:hover {
+      transform: scale(1.08);
+      border-color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .no-snapshot-badge {
+      font-size: 0.72rem;
+      color: var(--slate);
+      background: #f1f5f9;
+      padding: 0.3rem 0.5rem;
+      border-radius: 0.4rem;
+      border: 1px dashed #cbd5e1;
+      white-space: nowrap;
+    }
+
+    /* Similarity mini gauge */
+    .sim-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 130px;
+      margin: 0 auto;
+    }
+
+    .sim-bar-track {
+      flex: 1;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .sim-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.3s;
+    }
+
+    .sim-bar-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      min-width: 44px;
+      text-align: right;
+    }
+
+    /* Status badges */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-badge.status-chua-vao {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+    }
+
+    .status-badge.status-xac-thuc {
+      background: var(--warning-light);
+      color: var(--warning);
+      border: 1px solid #fde047;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-badge.status-dang-thi {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid #86efac;
+    }
+
+    .status-badge.status-nghi-van {
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+    }
+
+    .status-badge.status-da-nop {
+      background: var(--purple-light);
+      color: var(--purple);
+      border: 1px solid #c4b5fd;
+    }
+
+    .status-badge.status-dang-xuat {
+      background: #e2e8f0;
+      color: #475569;
+      border: 1px solid #94a3b8;
+    }
+
+    .btn-inspect {
+      padding: 0.35rem 0.65rem;
+      border-radius: 0.45rem;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-inspect:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    /* 4. Modal Photo Inspection */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 520px;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #64748b;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .modal-img-wrap {
+      width: 100%;
+      max-height: 360px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+    }
+
+    .modal-img {
+      max-width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+    }
+
+    .modal-info-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      background: #f8fafc;
+      padding: 0.85rem 1rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .modal-info-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-info-label {
+      font-size: 0.72rem;
+      color: var(--slate);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .modal-info-value {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .modal-verdict-box {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 0.65rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-verdict-box.verdict-success {
+      background: var(--success-light);
+      color: #15803d;
+      border: 1px solid #86efac;
+    }
+
+    .modal-verdict-box.verdict-danger {
+      background: var(--danger-light);
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+
+    .modal-footer {
+      padding: 0.75rem 1.25rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* 5. Mobile Responsiveness */
+    @media (max-width: 900px) {
+      .main-container {
+        width: 98%;
+        margin-top: 0.75rem;
+      }
+      .session-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .session-stats {
+        justify-content: space-between;
+      }
+      .stat-kpi-card {
+        flex: 1 1 calc(50% - 0.5rem);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .candidate-table thead {
+        display: none; /* Hide header on mobile, switch to card layout */
+      }
+      .candidate-table, .candidate-table tbody, .candidate-table tr, .candidate-table td {
+        display: block;
+        width: 100%;
+      }
+      .candidate-table tbody tr {
+        border-bottom: 2px solid var(--border);
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.65rem;
+      }
+      .candidate-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f8fafc;
+      }
+      .candidate-table td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--slate);
+      }
+      .search-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-box-wrapper {
+        max-width: 100%;
+      }
+      .filter-pills-group {
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Navbar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <img src="/static/images/logo.jpg" alt="HUIT Logo" class="brand-logo">
+      <div class="brand-title-group">
+        <span class="brand-school">Trường Đại học Công Thương TP. Hồ Chí Minh</span>
+        <span class="brand-system">Bảng Giám Thị - Điểm Danh & Giám Sát</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a href="/invigilator/report{% if session %}?room_id={{ selected_room }}&shift_id={{ selected_shift }}{% endif %}" class="btn btn-outline" style="font-size: 0.88rem; padding: 0.45rem 0.85rem;">
+        📊 Báo Cáo Thống Kê
+      </a>
+      <a href="/logout" class="btn btn-outline" style="font-size: 0.88rem; padding: 0.45rem 0.85rem;">
+        Đăng Xuất
+      </a>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Thanh điều khiển Phiên thi & Thống kê KPI -->
+    <div class="session-bar">
+      <div class="selector-group">
+        <div class="selector-field">
+          <label class="selector-label" for="select-room">🏢 Phòng Thi:</label>
+          <select id="select-room" class="select-box">
+            {% for r in rooms %}
+            <option value="{{ r.MaPhong }}" {% if r.MaPhong == selected_room %}selected{% endif %}>
+              {{ r.TenPhong }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="selector-field">
+          <label class="selector-label" for="select-shift">⏰ Ca Thi:</label>
+          <select id="select-shift" class="select-box">
+            {% for s in shifts %}
+            <option value="{{ s.MaCa }}" {% if s.MaCa == selected_shift %}selected{% endif %}>
+              {{ s.TenCa }} ({{ s.GioBatDau }} - {{ s.GioKetThuc }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="session-header-info">
+          <h2 id="session-info-title" class="session-info-title">
+            {{ session.ten_phong if session else 'Phòng thi' }} &bull; {{ session.ten_ca if session else 'Ca thi' }}
+          </h2>
+        </div>
+      </div>
+
+      <!-- Thống kê KPI nhanh -->
+      <div class="session-stats">
+        <div class="stat-kpi-card" data-filter="all" title="Xem tất cả thí sinh">
+          <div class="stat-kpi-icon">👥</div>
+          <div class="stat-kpi-body">
+            <span class="stat-kpi-label">Tổng Thí Sinh</span>
+            <span id="total-count" class="stat-kpi-value">{{ candidates|length }}</span>
+          </div>
+        </div>
+
+        <div class="stat-kpi-card" data-filter="active" title="Thí sinh xác thực hợp lệ & đang làm bài">
+          <div class="stat-kpi-icon" style="color: var(--success);">🟢</div>
+          <div class="stat-kpi-body">
+            <span class="stat-kpi-label">Đang Thi</span>
+            <span id="active-count" class="stat-kpi-value" style="color: var(--success);">0</span>
+          </div>
+        </div>
+
+        <div class="stat-kpi-card" data-filter="alert" title="Thí sinh có nghi vấn thi hộ lúc check-in">
+          <div class="stat-kpi-icon" style="color: var(--danger);">⚠️</div>
+          <div class="stat-kpi-body">
+            <span class="stat-kpi-label">Nghi Vấn</span>
+            <span id="alert-count" class="stat-kpi-value" style="color: var(--danger);">0</span>
+          </div>
+        </div>
+
+        <div class="stat-kpi-card" data-filter="submitted" title="Thí sinh đã nộp bài">
+          <div class="stat-kpi-icon" style="color: var(--purple);">📝</div>
+          <div class="stat-kpi-body">
+            <span class="stat-kpi-label">Đã Nộp</span>
+            <span id="submitted-count" class="stat-kpi-value" style="color: var(--purple);">0</span>
+          </div>
+        </div>
+
+        <div class="stat-kpi-card" data-filter="absent" title="Thí sinh chưa vào phòng thi">
+          <div class="stat-kpi-icon" style="color: var(--slate);">⚪</div>
+          <div class="stat-kpi-body">
+            <span class="stat-kpi-label">Chưa Vào</span>
+            <span id="absent-count" class="stat-kpi-value" style="color: var(--slate);">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thanh Tìm kiếm và Bộ Lọc Nhanh -->
+    <div class="search-filter-bar">
+      <div class="search-box-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="candidate-search" class="search-input" placeholder="Tìm theo tên thí sinh, MSSV..." autocomplete="off">
+      </div>
+
+      <div class="filter-pills-group">
+        <button type="button" class="filter-btn active" data-filter="all">
+          Tất cả (<span id="pill-all-count">{{ candidates|length }}</span>)
+        </button>
+        <button type="button" class="filter-btn" data-filter="active">
+          Đang thi (<span id="pill-active-count">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-filter="alert">
+          Nghi vấn (<span id="pill-alert-count">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-filter="submitted">
+          Đã nộp (<span id="pill-submitted-count">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-filter="absent">
+          Chưa vào (<span id="pill-absent-count">0</span>)
+        </button>
+      </div>
+    </div>
+
+    <!-- Bảng Danh Sách Thí Sinh (Table View) -->
+    <div class="table-container">
+      <table class="candidate-table">
+        <thead>
+          <tr>
+            <th style="width: 55px; text-align: center;">STT</th>
+            <th style="width: 25%;">Thí Sinh</th>
+            <th style="width: 14%; text-align: center;">Ảnh Check-in</th>
+            <th style="width: 13%; text-align: center;">Thời Gian</th>
+            <th style="width: 17%; text-align: center;">Độ Tương Đồng</th>
+            <th style="width: 17%; text-align: center;">Trạng Thái</th>
+            <th style="width: 14%; text-align: center;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody id="candidate-table-body">
+          {% for c in candidates %}
+          <tr id="row-{{ c.ma_sinh_vien }}" 
+              data-mssv="{{ c.mssv }}" 
+              data-name="{{ c.ho_ten|lower }}" 
+              data-status="{{ c.trang_thai_thi_sinh }}"
+              data-sim="{{ c.do_tuong_dong_xac_thuc or '' }}"
+              data-img="{{ c.anh_xac_thuc or '' }}"
+              class="candidate-row {% if c.trang_thai_thi_sinh == 'Nghi van thi ho' %}row-alert{% endif %}">
+            
+            <td data-label="STT" style="text-align: center; font-weight: 700; color: var(--slate);">
+              {{ c.stt }}
+            </td>
+
+            <td data-label="Thí Sinh">
+              <div class="student-profile-cell">
+                <div class="student-avatar">
+                  {{ c.ho_ten.split()[-1][0] if c.ho_ten else 'SV' }}
+                </div>
+                <div class="student-info-col">
+                  <span class="student-name">{{ c.ho_ten }}</span>
+                  <span class="student-mssv">MSSV: {{ c.mssv }}</span>
+                </div>
+              </div>
+            </td>
+
+            <td data-label="Ảnh Check-in" style="text-align: center;">
+              {% if c.anh_xac_thuc %}
+              <img src="{{ c.anh_xac_thuc }}" 
+                   alt="Ảnh xác thực" 
+                   class="snapshot-thumb" 
+                   title="Bấm để xem ảnh lớn"
+                   onclick="openPhotoModal('{{ c.ho_ten }}', '{{ c.mssv }}', '{{ c.anh_xac_thuc }}', '{{ (c.do_tuong_dong_xac_thuc * 100)|round(1) if c.do_tuong_dong_xac_thuc else '--' }}%', '{{ c.trang_thai_thi_sinh }}', '{{ c.thoi_gian_dang_nhap or '--' }}')">
+              {% else %}
+              <span class="no-snapshot-badge">Chưa có ảnh</span>
+              {% endif %}
+            </td>
+
+            <td data-label="Thời Gian" class="row-time" style="text-align: center; font-size: 0.85rem; font-weight: 600; color: #334155;">
+              {{ c.thoi_gian_dang_nhap or '--' }}
+            </td>
+
+            <td data-label="Độ Tương Đồng" style="text-align: center;">
+              <div class="sim-cell">
+                <div class="sim-bar-track">
+                  <div class="sim-bar-fill" 
+                       style="width: {% if c.do_tuong_dong_xac_thuc %}{{ (c.do_tuong_dong_xac_thuc * 100)|round }}%{% else %}0%{% endif %}; background-color: {% if c.do_tuong_dong_xac_thuc and c.do_tuong_dong_xac_thuc >= 0.7 %}var(--success){% else %}var(--danger){% endif %};">
+                  </div>
+                </div>
+                <span class="sim-bar-val" style="color: {% if c.do_tuong_dong_xac_thuc and c.do_tuong_dong_xac_thuc >= 0.7 %}var(--success){% elif c.do_tuong_dong_xac_thuc %}var(--danger){% else %}var(--slate){% endif %};">
+                  {% if c.do_tuong_dong_xac_thuc %}
+                    {{ (c.do_tuong_dong_xac_thuc * 100)|round(1) }}%
+                  {% else %}
+                    --
+                  {% endif %}
+                </span>
+              </div>
+            </td>
+
+            <td data-label="Trạng Thái" style="text-align: center;">
+              {% if c.trang_thai_thi_sinh == 'Dang thi' %}
+                <span class="status-badge status-dang-thi">🟢 Đang thi</span>
+              {% elif c.trang_thai_thi_sinh == 'Dang xac thuc' %}
+                <span class="status-badge status-xac-thuc">⏳ Đang xác thực</span>
+              {% elif c.trang_thai_thi_sinh == 'Nghi van thi ho' or c.trang_thai_thi_sinh == 'Xac thuc that bai' %}
+                <span class="status-badge status-nghi-van">⚠️ Nghi vấn thi hộ</span>
+              {% elif c.trang_thai_thi_sinh == 'Da nop' %}
+                <span class="status-badge status-da-nop">📝 Đã nộp bài</span>
+              {% elif c.trang_thai_thi_sinh in ['Da dang xuat', 'Ngoai tuyen'] %}
+                <span class="status-badge status-dang-xuat">🚪 Đã đăng xuất</span>
+              {% else %}
+                <span class="status-badge status-chua-vao">⚪ Chưa đăng nhập</span>
+              {% endif %}
+            </td>
+
+            <td data-label="Thao Tác" style="text-align: center;">
+              {% if c.anh_xac_thuc %}
+              <button type="button" class="btn-inspect" 
+                      onclick="openPhotoModal('{{ c.ho_ten }}', '{{ c.mssv }}', '{{ c.anh_xac_thuc }}', '{{ (c.do_tuong_dong_xac_thuc * 100)|round(1) if c.do_tuong_dong_xac_thuc else '--' }}%', '{{ c.trang_thai_thi_sinh }}', '{{ c.thoi_gian_dang_nhap or '--' }}')">
+                🔍 Xem ảnh
+              </button>
+              {% else %}
+              <span style="color: var(--slate); font-size: 0.75rem;">--</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 3rem; color: #64748b;">
+              <h3>Không có sinh viên trong phiên thi này.</h3>
+              <p>Vui lòng chọn phòng thi hoặc ca thi khác trên thanh điều khiển.</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Xem Chi Tiết Ảnh Đối Sánh Khuôn Mặt -->
+  <div id="photo-modal" class="modal-backdrop" onclick="closePhotoModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Chi Tiết Xác Thực Khuôn Mặt</h3>
+        <button type="button" class="modal-close-btn" onclick="closePhotoModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-img-wrap">
+          <img id="modal-image" src="" alt="Ảnh chụp đối sánh" class="modal-img">
+        </div>
+
+        <div class="modal-info-grid">
+          <div class="modal-info-item">
+            <span class="modal-info-label">Thí Sinh:</span>
+            <span id="modal-student-name" class="modal-info-value">--</span>
+          </div>
+          <div class="modal-info-item">
+            <span class="modal-info-label">MSSV:</span>
+            <span id="modal-student-mssv" class="modal-info-value">--</span>
+          </div>
+          <div class="modal-info-item" style="grid-column: 1 / -1;">
+            <span class="modal-info-label">Thời Gian Check-in:</span>
+            <span id="modal-time" class="modal-info-value">--</span>
+          </div>
+        </div>
+
+        <div id="modal-verdict" class="modal-verdict-box verdict-success">
+          <span id="modal-verdict-text">✅ Xác thực hợp lệ</span>
+          <span id="modal-sim-value">85.0%</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" style="padding: 0.45rem 1rem;" onclick="closePhotoModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.CURRENT_SESSION_ID = {{ session.ma_phien_thi if session else 'null' }};
+  </script>
+  <script src="/static/js/invigilator.js?v={{ range(1000, 9999)|random }}"></script>
+</body>
+</html>

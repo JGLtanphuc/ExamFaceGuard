@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Cáo Điểm Danh & Đối Sánh Khuôn Mặt - Phòng Thi</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    /* =========================================================
+       REPORT DASHBOARD THEME & EXECUTIVE STYLES
+       ========================================================= */
+    :root {
+      --bg-page: #f8fafc;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --slate: #475569;
+      --slate-light: #f1f5f9;
+      --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --shadow-hover: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .report-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* Top Action Bar */
+    .report-header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid var(--card-border);
+      background: #ffffff;
+      color: var(--text-main);
+    }
+
+    .btn-action:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    .btn-action.btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    .btn-action.btn-primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    .btn-action.btn-excel {
+      background: #059669;
+      color: #ffffff;
+      border-color: #059669;
+    }
+
+    .btn-action.btn-excel:hover {
+      background: #047857;
+      border-color: #047857;
+    }
+
+    /* Filter Card */
+    .filter-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-card);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .filter-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+    }
+
+    .filter-select {
+      padding: 0.5rem 1.5rem 0.5rem 0.85rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.5rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+      background-color: #ffffff;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .filter-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    }
+
+    .session-meta-box {
+      text-align: right;
+    }
+
+    .session-title-text {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 0 0 0.25rem;
+    }
+
+    .session-sub-text {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+
+    /* KPI Metrics Grid */
+    .metrics-section-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .metrics-grid-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      padding: 1.15rem 1.35rem;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .metric-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.65rem;
+    }
+
+    .metric-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-sub);
+    }
+
+    .metric-icon-wrap {
+      width: 38px;
+      height: 38px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+    }
+
+    .metric-card-bottom {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .metric-num {
+      font-size: 1.9rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--text-main);
+    }
+
+    .metric-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+    }
+
+    .card-total .metric-icon-wrap { background: var(--primary-light); color: var(--primary); }
+    .card-attended .metric-icon-wrap { background: var(--success-light); color: var(--success); }
+    .card-suspect .metric-icon-wrap { background: var(--danger-light); color: var(--danger); }
+    .card-submitted .metric-icon-wrap { background: var(--purple-light); color: var(--purple); }
+    .card-absent .metric-icon-wrap { background: var(--slate-light); color: var(--slate); }
+
+    /* Management & Table Panel */
+    .management-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-top: 1.25rem;
+    }
+
+    .management-header {
+      padding: 1.15rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .management-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .management-toolbar {
+      padding: 0.85rem 1.5rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+      max-width: 420px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+      font-size: 0.9rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 1rem 0.5rem 2.4rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.5rem;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    }
+
+    .filter-pills-group {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-pill {
+      padding: 0.4rem 0.8rem;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-pill:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .tab-pill.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+
+    /* Table Styles */
+    .table-scroll-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .modern-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    .modern-table th {
+      background: #f1f5f9;
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 1px solid var(--card-border);
+      text-transform: uppercase;
+      font-size: 0.74rem;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .modern-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    .modern-table tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .modern-table tbody tr.row-alert {
+      background-color: #fff5f5;
+    }
+
+    .candidate-info-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .avatar-mini {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mssv-bold {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 0.85rem;
+    }
+
+    .student-name-text {
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 0.88rem;
+    }
+
+    /* Thumbnail snapshot */
+    .snapshot-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.4rem;
+      object-fit: cover;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    .snapshot-thumb:hover {
+      transform: scale(1.1);
+      border-color: var(--primary);
+    }
+
+    /* Status Badges */
+    .status-badge-modern {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .status-badge-modern.badge-success {
+      background: var(--success-light);
+      color: var(--success);
+      border: 1px solid #86efac;
+    }
+
+    .status-badge-modern.badge-danger {
+      background: var(--danger-light);
+      color: var(--danger);
+      border: 1px solid #fca5a5;
+    }
+
+    .status-badge-modern.badge-warning {
+      background: var(--warning-light);
+      color: var(--warning);
+      border: 1px solid #fde047;
+    }
+
+    .status-badge-modern.badge-slate {
+      background: var(--slate-light);
+      color: var(--slate);
+      border: 1px solid #cbd5e1;
+    }
+
+    /* Mini Progress Bar for Similarity */
+    .sim-gauge-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 105px;
+    }
+
+    .sim-track {
+      flex: 1;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .sim-fill {
+      height: 100%;
+      border-radius: 9999px;
+      transition: width 0.3s;
+    }
+
+    .sim-val-text {
+      font-weight: 700;
+      font-size: 0.8rem;
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .pc-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.4rem;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    /* Pagination */
+    .pagination-bar {
+      padding: 0.85rem 1.5rem;
+      background: #ffffff;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.82rem;
+      color: var(--text-sub);
+    }
+
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .page-btn {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 0.5rem;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: var(--text-main);
+      border-radius: 0.375rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .page-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Modal Photo Inspection */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 500px;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      padding: 1rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #64748b;
+      line-height: 1;
+    }
+
+    .modal-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .modal-img-wrap {
+      width: 100%;
+      max-height: 340px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--card-border);
+    }
+
+    .modal-img {
+      max-width: 100%;
+      max-height: 340px;
+      object-fit: contain;
+    }
+
+    .modal-footer {
+      padding: 0.75rem 1.25rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Print styling */
+    @media print {
+      .navbar, .filter-panel, .management-toolbar, .pagination-bar, .report-header-actions {
+        display: none !important;
+      }
+      body {
+        background: #ffffff !important;
+        font-size: 11pt;
+        color: #000000 !important;
+      }
+      .report-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      .print-official-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #000;
+        padding-bottom: 0.75rem;
+      }
+      .metric-card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .modern-table {
+        border: 1px solid #000 !important;
+      }
+      .modern-table th, .modern-table td {
+        border: 1px solid #000 !important;
+        padding: 6px 8px !important;
+        font-size: 9pt !important;
+      }
+      .print-signature-section {
+        display: flex !important;
+        justify-content: space-around;
+        margin-top: 3rem;
+        page-break-inside: avoid;
+        text-align: center;
+      }
+    }
+
+    .print-official-header { display: none; }
+    .print-signature-section { display: none; }
+
+    /* Mobile view */
+    @media (max-width: 768px) {
+      .report-container {
+        padding: 0.75rem;
+      }
+      .filter-panel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .session-meta-box {
+        text-align: left;
+      }
+      .session-sub-text {
+        justify-content: flex-start;
+      }
+      .management-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-box-wrap {
+        max-width: 100%;
+      }
+      .filter-pills-group {
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+      }
+      .modern-table thead {
+        display: none;
+      }
+      .modern-table, .modern-table tbody, .modern-table tr, .modern-table td {
+        display: block;
+        width: 100%;
+      }
+      .modern-table tbody tr {
+        border-bottom: 2px solid var(--card-border);
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.65rem;
+        background: #ffffff;
+      }
+      .modern-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #f8fafc;
+      }
+      .modern-table td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-sub);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Navbar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <img src="/static/images/logo.jpg" alt="HUIT Logo" class="brand-logo">
+      <div class="brand-title-group">
+        <span class="brand-school">Trường Đại học Công Thương TP. Hồ Chí Minh</span>
+        <span class="brand-system">Báo Cáo Điểm Danh & Đối Sánh Khuôn Mặt</span>
+      </div>
+    </div>
+    <div class="report-header-actions">
+      <button id="btn-export-excel" class="btn-action btn-excel" title="Xuất biên bản điểm danh dạng file Excel (.xlsx)">
+        📊 Xuất File Excel
+      </button>
+      <button id="btn-print-report" class="btn-action" title="In trực tiếp hoặc Lưu file PDF chuẩn">
+        🖨️ In / Xuất PDF
+      </button>
+      <a href="/invigilator{% if report %}?room_id={{ selected_room }}&shift_id={{ selected_shift }}{% endif %}" class="btn-action btn-primary">
+        ◀ Bảng Giám Thị
+      </a>
+      <a href="/logout" class="btn-action" style="color: var(--danger);">
+        Đăng Xuất
+      </a>
+    </div>
+  </header>
+
+  <div class="report-container">
+    <!-- Header A4 khi in -->
+    <div class="print-official-header">
+      <div style="font-size: 12pt; font-weight: bold; text-transform: uppercase;">BỘ CÔNG THƯƠNG - TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH</div>
+      <h2 style="font-size: 15pt; margin: 0.5rem 0; text-transform: uppercase;">BIÊN BẢN ĐIỂM DANH & ĐỐI SÁNH KHUÔN MẶT THÍ SINH PHÒNG THI</h2>
+      <div>
+        <strong>Phòng Thi:</strong> {{ report.ten_phong if report else '' }} | 
+        <strong>Ca Thi:</strong> {{ report.ten_ca if report else '' }} ({{ report.gio_thi if report else '' }})
+      </div>
+    </div>
+
+    <!-- Thanh chọn Phòng & Ca thi -->
+    <div class="filter-panel">
+      <div class="filter-group">
+        <div class="filter-item">
+          <span class="filter-label">Chọn Phòng Thi</span>
+          <select id="report-room" class="filter-select">
+            {% for r in rooms %}
+            <option value="{{ r.MaPhong }}" {% if r.MaPhong == selected_room %}selected{% endif %}>
+              🚪 {{ r.TenPhong }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <span class="filter-label">Chọn Ca Thi</span>
+          <select id="report-shift" class="filter-select">
+            {% for s in shifts %}
+            <option value="{{ s.MaCa }}" {% if s.MaCa == selected_shift %}selected{% endif %}>
+              ⏰ {{ s.TenCa }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="session-meta-box">
+        <div class="session-title-text">
+          {% if report %}{{ report.ten_phong }} &bull; {{ report.ten_ca }}{% else %}Chưa chọn phiên{% endif %}
+        </div>
+        <div class="session-sub-text">
+          <span>🕒 {{ report.gio_thi if report else '--' }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if report %}
+    <!-- 1. TỔNG QUAN CHỈ SỐ PHÒNG THI -->
+    <div class="metrics-section-title">
+      <span>📌</span> TỔNG HỢP ĐIỂM DANH & XÁC THỰC PHÒNG THI
+    </div>
+    <div class="metrics-grid-row">
+      <!-- Tổng thí sinh -->
+      <div class="metric-card card-total">
+        <div class="metric-card-top">
+          <span class="metric-title">Tổng Thí Sinh</span>
+          <div class="metric-icon-wrap">👥</div>
+        </div>
+        <div class="metric-card-bottom">
+          <span class="metric-num">{{ report.tong_sinh_vien }}</span>
+          <span class="metric-pill" style="background: #eff6ff; color: #1e3a8a;">Danh sách</span>
+        </div>
+      </div>
+
+      <!-- Đã xác thực & tham gia thi -->
+      <div class="metric-card card-attended">
+        <div class="metric-card-top">
+          <span class="metric-title">Tham Gia Dự Thi</span>
+          <div class="metric-icon-wrap">✅</div>
+        </div>
+        <div class="metric-card-bottom">
+          <span class="metric-num" style="color: var(--success);">{{ report.so_sv_tham_gia }}</span>
+          <span class="metric-pill" style="background: #dcfce7; color: #15803d;">
+            {% if report.tong_sinh_vien > 0 %}
+              {{ ((report.so_sv_tham_gia / report.tong_sinh_vien) * 100)|round(1) }}%
+            {% else %}0%{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <!-- Nghi vấn thi hộ lúc check-in -->
+      <div class="metric-card card-suspect">
+        <div class="metric-card-top">
+          <span class="metric-title">Nghi Vấn Thi Hộ</span>
+          <div class="metric-icon-wrap">⚠️</div>
+        </div>
+        <div class="metric-card-bottom">
+          <span class="metric-num" style="color: var(--danger);">{{ report.so_ca_nghi_van }}</span>
+          <span class="metric-pill" style="background: #fee2e2; color: #b91c1c;">Độ khớp &lt; 70%</span>
+        </div>
+      </div>
+
+      <!-- Đã nộp bài -->
+      <div class="metric-card card-submitted">
+        <div class="metric-card-top">
+          <span class="metric-title">Đã Nộp Bài</span>
+          <div class="metric-icon-wrap">📝</div>
+        </div>
+        <div class="metric-card-bottom">
+          <span class="metric-num" style="color: var(--purple);">{{ report.so_sv_da_nop }}</span>
+          <span class="metric-pill" style="background: #ede9fe; color: #7c3aed;">Hoàn tất bài</span>
+        </div>
+      </div>
+
+      <!-- Vắng thi -->
+      <div class="metric-card card-absent">
+        <div class="metric-card-top">
+          <span class="metric-title">Vắng Thi</span>
+          <div class="metric-icon-wrap">👤</div>
+        </div>
+        <div class="metric-card-bottom">
+          <span class="metric-num" style="color: var(--slate);">{{ report.so_sv_vang_thi }}</span>
+          <span class="metric-pill" style="background: #f1f5f9; color: #475569;">Chưa vào</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. BẢNG DỮ LIỆU ĐIỂM DANH & ĐỐI SÁNH KHUÔN MẶT -->
+    <div class="management-panel">
+      <div class="management-header">
+        <h3 class="management-title">Biên Bản Điểm Danh & Đối Sánh Khuôn Mặt Thí Sinh</h3>
+        <span id="filtered-count-badge" class="badge-count" style="font-weight: 700; color: var(--primary); font-size: 0.88rem;">
+          {{ report.danh_sach_thi_sinh|length }} thí sinh
+        </span>
+      </div>
+
+      <!-- Thanh công cụ lọc & tìm kiếm -->
+      <div class="management-toolbar">
+        <div class="search-box-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="candidate-search-input" class="search-input" placeholder="Tìm kiếm theo MSSV, Họ tên, Ghi chú...">
+        </div>
+
+        <div class="filter-pills-group">
+          <button type="button" class="tab-pill active" data-filter="ALL">
+            Tất Cả ({{ report.danh_sach_thi_sinh|length }})
+          </button>
+          <button type="button" class="tab-pill" data-filter="ATTENDED">
+            🟢 Tham gia thi ({{ report.so_sv_tham_gia }})
+          </button>
+          <button type="button" class="tab-pill" data-filter="SUSPECT">
+            ⚠️ Nghi vấn thi hộ ({{ report.so_ca_nghi_van }})
+          </button>
+          <button type="button" class="tab-pill" data-filter="SUBMITTED">
+            📝 Đã nộp bài ({{ report.so_sv_da_nop }})
+          </button>
+          <button type="button" class="tab-pill" data-filter="ABSENT">
+            ⚪ Vắng thi ({{ report.so_sv_vang_thi }})
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.45rem;">
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Xem:</span>
+          <select id="page-size-select" class="filter-select" style="padding: 0.35rem 0.65rem; font-size: 0.82rem;">
+            <option value="15" selected>15 dòng</option>
+            <option value="30">30 dòng</option>
+            <option value="50">50 dòng</option>
+            <option value="9999">Tất cả</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Bảng dữ liệu thí sinh -->
+      <div class="table-scroll-container">
+        <table class="modern-table" id="candidates-report-table">
+          <thead>
+            <tr>
+              <th style="width: 50px; text-align: center;">STT</th>
+              <th style="width: 140px;">Thời Gian Check-in</th>
+              <th style="width: 230px;">Thí Sinh</th>
+              <th style="width: 90px; text-align: center;">Ảnh Check-in</th>
+              <th style="width: 140px;">Độ Tương Đồng</th>
+              <th style="width: 140px;">Kết Quả Đối Sánh</th>
+              <th style="width: 130px;">Trạng Thái Bài Thi</th>
+              <th>Ghi Chú</th>
+            </tr>
+          </thead>
+          <tbody id="candidates-tbody">
+            <!-- Render động bằng JavaScript report.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div class="pagination-bar">
+        <div id="pagination-info">
+          Hiển thị 1 - {{ [15, report.danh_sach_thi_sinh|length]|min }} trong tổng số {{ report.danh_sach_thi_sinh|length }} thí sinh
+        </div>
+        <div class="pagination-controls" id="pagination-controls"></div>
+      </div>
+    </div>
+
+    <!-- Khung chữ ký chính thức khi in báo cáo -->
+    <div class="print-signature-section">
+      <div>
+        <div style="font-weight: bold; text-transform: uppercase;">GIÁM THỊ 1</div>
+        <div style="font-size: 9pt; font-style: italic;">(Ký và ghi rõ họ tên)</div>
+        <div style="margin-top: 4.5rem;">_______________________</div>
+      </div>
+      <div>
+        <div style="font-weight: bold; text-transform: uppercase;">GIÁM THỊ 2</div>
+        <div style="font-size: 9pt; font-style: italic;">(Ký và ghi rõ họ tên)</div>
+        <div style="margin-top: 4.5rem;">_______________________</div>
+      </div>
+      <div>
+        <div style="font-weight: bold; text-transform: uppercase;">TRƯỞNG ĐIỂM THI</div>
+        <div style="font-size: 9pt; font-style: italic;">(Ký tên và đóng dấu)</div>
+        <div style="margin-top: 4.5rem;">_______________________</div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="filter-panel" style="justify-content: center; padding: 4rem 2rem; text-align: center;">
+      <div>
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">📁</div>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+          Không Tìm Thấy Phiên Thi
+        </h3>
+        <p style="color: var(--text-sub); margin: 0;">
+          Vui lòng chọn phòng thi hoặc ca thi khác từ menu bên trên để xem báo cáo.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Modal Phóng to Ảnh Check-in -->
+  <div id="photo-modal" class="modal-backdrop" onclick="closePhotoModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modal-title" class="modal-title">Ảnh Chụp Check-in Thí Sinh</h3>
+        <button type="button" class="modal-close-btn" onclick="closePhotoModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-img-wrap">
+          <img id="modal-img" src="" alt="Ảnh chụp đối sánh" class="modal-img">
+        </div>
+        <div id="modal-meta" style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">--</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" style="padding: 0.45rem 1rem;" onclick="closePhotoModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.REPORT_DATA = {{ report | tojson if report else '{}' }};
+  </script>
+  <script src="/static/js/report.js?v={{ range(1000, 9999)|random }}"></script>
+</body>
+</html>

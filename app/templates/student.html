@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phòng Thi Trực Tuyến - {{ user.ho_ten }}</title>
+  <link rel="stylesheet" href="/static/css/style.css?v={{ range(1000, 9999)|random }}">
+  <style>
+    .question-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.2s;
+    }
+    .question-card.answered {
+      border-left: 4px solid var(--success);
+    }
+    .question-num {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    .question-text {
+      font-size: 1rem;
+      color: var(--secondary);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .option-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.15s;
+    }
+    .option-label:hover {
+      background-color: #f1f5f9;
+    }
+    .option-radio {
+      cursor: pointer;
+      width: 1.1rem;
+      height: 1.1rem;
+    }
+    .timer-badge {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--danger);
+      background: #fef2f2;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.375rem;
+      border: 1px solid #fecaca;
+    }
+    .metric-table {
+      width: 100%;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    .metric-table td {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .metric-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+    }
+    #student-alert-box {
+      margin-top: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      animation: blink 1s infinite alternate;
+    }
+    @keyframes blink {
+      0% { opacity: 0.9; }
+      100% { opacity: 1; }
+    }
+    .student-layout {
+      display: block !important;
+      max-width: 860px !important;
+      margin: 0 auto !important;
+      width: 100% !important;
+    }
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .student-avatar-icon {
+      width: 34px;
+      height: 34px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      overflow: hidden;
+      border: 1.5px solid #cbd5e1;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .student-avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      .navbar {
+        flex-direction: column;
+        gap: 0.6rem;
+        align-items: flex-start;
+        padding: 0.75rem 1rem;
+      }
+      .nav-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .container {
+        padding: 0.75rem !important;
+      }
+      .exam-header-strip {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+      .timer-pill {
+        align-self: flex-start;
+      }
+      .submit-action-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        text-align: center;
+      }
+      .btn-submit-exam {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-brand">
+      <img src="/static/images/logo.jpg" alt="HUIT Logo" class="brand-logo">
+      <div class="brand-title-group">
+        <span class="brand-school">Trường Đại học Công Thương TP. Hồ Chí Minh</span>
+        <span class="brand-system">Cổng Thi Trực Tuyến</span>
+      </div>
+      <span class="nav-badge">Phòng: {{ session.ten_phong }} • {{ session.ten_ca }}</span>
+    </div>
+    <div class="nav-actions">
+      <span class="verified-badge">✅ Đã xác thực khuôn mặt</span>
+      <div class="student-user-chip">
+        <div class="student-avatar-icon">
+          {% if session.anh_xac_thuc %}
+            <img src="{{ session.anh_xac_thuc }}" alt="Avatar" class="student-avatar-img">
+          {% else %}
+            👤
+          {% endif %}
+        </div>
+        <div class="student-user-info">
+          <span class="student-user-name">{{ user.ho_ten }}</span>
+          <span class="student-user-sub">MSSV: <strong>{{ user.mssv }}</strong></span>
+        </div>
+      </div>
+      <a href="/logout" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.4rem 0.85rem; border-radius: 0.5rem;">
+        Đăng Xuất
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="student-layout">
+      <!-- Cột Trái: Bài Thi -->
+      <section class="exam-panel">
+        <div class="exam-header-strip">
+          <div>
+            <h2 class="exam-title-text">
+              📝 {{ session.ten_ky_thi }}
+            </h2>
+            <div class="exam-meta-text">
+              <span>📅 Ca thi: <strong>{{ session.ten_ca }}</strong> ({{ session.gio_bat_dau }} - {{ session.gio_ket_thuc }})</span>
+              <span>⏱️ Thời lượng: <strong>60 phút</strong></span>
+            </div>
+          </div>
+          <div class="timer-pill" id="exam-timer-wrapper">
+            <span>⏳</span>
+            <div id="exam-timer">60:00</div>
+          </div>
+        </div>
+
+        <!-- Thanh tiến độ hoàn thành bài thi -->
+        <div class="progress-container">
+          <div class="progress-header">
+            <span>Tiến độ hoàn thành</span>
+            <span id="progress-text">Đã trả lời: <strong>0/{{ cau_hoi_list|length }}</strong> câu</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Danh sách câu hỏi -->
+        <div id="questions-container">
+          {% for q in cau_hoi_list %}
+          <div class="question-card {% if dap_an_map.get(q.MaCauHoi) %}answered{% endif %}" id="question-card-{{ q.MaCauHoi }}">
+            <div class="question-card-header">
+              <span class="question-pill-tag">Câu {{ q.SoThuTu }}</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Trắc nghiệm 1 đáp án</span>
+            </div>
+            <div class="question-text-content">{{ q.NoiDung }}</div>
+            <div class="options-tile-list">
+              <label class="option-tile {% if dap_an_map.get(q.MaCauHoi) == 'A' %}active{% endif %}">
+                <input
+                  type="radio"
+                  name="question_{{ q.MaCauHoi }}"
+                  value="A"
+                  class="option-radio"
+                  data-question-id="{{ q.MaCauHoi }}"
+                  style="display: none;"
+                  {% if dap_an_map.get(q.MaCauHoi) == 'A' %}checked{% endif %}
+                >
+                <span class="option-letter-badge">A</span>
+                <span class="option-tile-text">{{ q.LuaChonA }}</span>
+              </label>
+
+              <label class="option-tile {% if dap_an_map.get(q.MaCauHoi) == 'B' %}active{% endif %}">
+                <input
+                  type="radio"
+                  name="question_{{ q.MaCauHoi }}"
+                  value="B"
+                  class="option-radio"
+                  data-question-id="{{ q.MaCauHoi }}"
+                  style="display: none;"
+                  {% if dap_an_map.get(q.MaCauHoi) == 'B' %}checked{% endif %}
+                >
+                <span class="option-letter-badge">B</span>
+                <span class="option-tile-text">{{ q.LuaChonB }}</span>
+              </label>
+
+              <label class="option-tile {% if dap_an_map.get(q.MaCauHoi) == 'C' %}active{% endif %}">
+                <input
+                  type="radio"
+                  name="question_{{ q.MaCauHoi }}"
+                  value="C"
+                  class="option-radio"
+                  data-question-id="{{ q.MaCauHoi }}"
+                  style="display: none;"
+                  {% if dap_an_map.get(q.MaCauHoi) == 'C' %}checked{% endif %}
+                >
+                <span class="option-letter-badge">C</span>
+                <span class="option-tile-text">{{ q.LuaChonC }}</span>
+              </label>
+
+              <label class="option-tile {% if dap_an_map.get(q.MaCauHoi) == 'D' %}active{% endif %}">
+                <input
+                  type="radio"
+                  name="question_{{ q.MaCauHoi }}"
+                  value="D"
+                  class="option-radio"
+                  data-question-id="{{ q.MaCauHoi }}"
+                  style="display: none;"
+                  {% if dap_an_map.get(q.MaCauHoi) == 'D' %}checked{% endif %}
+                >
+                <span class="option-letter-badge">D</span>
+                <span class="option-tile-text">{{ q.LuaChonD }}</span>
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="submit-action-box">
+          <span style="font-size: 0.85rem; color: var(--text-muted);">
+            Vui lòng kiểm tra kỹ tất cả các câu hỏi trước khi nộp bài.
+          </span>
+          <button id="btn-submit-exam" class="btn-submit-exam">
+            <span>✓ Nộp Bài Thi</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    window.EXAM_TOKEN = "{{ token or '' }}";
+  </script>
+  <script src="/static/js/student.js?v={{ range(1000, 9999)|random }}"></script>
+</body>
+</html>
+
