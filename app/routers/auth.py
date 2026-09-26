@@ -85,10 +85,10 @@ async def login_submit(
         token = create_access_token({"ma_tai_khoan": user.MaTaiKhoan, "vai_tro": "GIAM_THI"})
         redirect_url = f"/invigilator?token={token}"
 
-        # Nếu là AJAX/fetch từ mobile
+        is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
         if is_ajax:
             res = JSONResponse({"success": True, "redirect_url": redirect_url, "token": token})
-            res.set_cookie(key="access_token", value=token, max_age=3600 * 8, path="/", samesite="lax")
+            res.set_cookie(key="access_token", value=token, max_age=3600 * 8, path="/", samesite="lax", secure=is_https)
             return res
 
         redirect_res = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
@@ -97,7 +97,8 @@ async def login_submit(
             value=token,
             max_age=3600 * 8,
             path="/",
-            samesite="lax"
+            samesite="lax",
+            secure=is_https
         )
         return redirect_res
 
@@ -161,10 +162,10 @@ async def login_submit(
 
         redirect_url = f"/student/verify-face?token={token}"
 
-        # Nếu là AJAX/fetch từ mobile
+        is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
         if is_ajax:
             res = JSONResponse({"success": True, "redirect_url": redirect_url, "token": token})
-            res.set_cookie(key="access_token", value=token, max_age=3600 * 8, path="/", samesite="lax")
+            res.set_cookie(key="access_token", value=token, max_age=3600 * 8, path="/", samesite="lax", secure=is_https)
             return res
 
         redirect_res = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
@@ -173,7 +174,8 @@ async def login_submit(
             value=token,
             max_age=3600 * 8,
             path="/",
-            samesite="lax"
+            samesite="lax",
+            secure=is_https
         )
         return redirect_res
 

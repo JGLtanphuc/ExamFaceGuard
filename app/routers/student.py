@@ -34,10 +34,13 @@ class VerifyFacePayload(BaseModel):
 @router.get("/verify-face", response_class=HTMLResponse)
 async def verify_face_page(
     request: Request,
-    user: dict = Depends(require_role(["SINH_VIEN"])),
     db: Session = Depends(get_db)
 ):
     """Giao diện chụp ảnh xác thực khuôn mặt (Face Verification Check-in)"""
+    user = get_current_user(request, db)
+    if not user or user.get("vai_tro") != "SINH_VIEN":
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     ma_sinh_vien = user["ma_sinh_vien"]
     session_info = get_student_session(db, ma_sinh_vien)
     if not session_info:
@@ -68,6 +71,7 @@ async def verify_face_page(
 
 @router.post("/api/verify-face")
 async def process_face_verification(
+    request: Request,
     payload: VerifyFacePayload,
     user: dict = Depends(require_role(["SINH_VIEN"])),
     db: Session = Depends(get_db)
@@ -146,13 +150,36 @@ async def process_face_verification(
         except Exception as ws_err:
             print(f"[WebSocket Broadcast Error]: {ws_err}")
 
-        return {
+        # Luôn mang theo token khi chuyển trang để tương thích Safari iOS & Cloudflare Tunnel
+        auth_token = request.query_params.get("token") or request.cookies.get("access_token") or ""
+        if not auth_token:
+            auth_h = request.headers.get("Authorization", "")
+            if auth_h.startswith("Bearer "):
+                auth_token = auth_h[7:].strip()
+
+        redirect_target = f"/student?token={auth_token}" if auth_token else "/student"
+
+        res = JSONResponse({
             "success": True,
+            "status": result.get("status", "DUNG_NGUOI"),
+            "method": result.get("method", "EARLY_EXIT_PASS"),
             "similarity": result["similarity"],
             "image_path": result["image_path"],
-            "redirect_url": "/student",
+            "redirect_url": redirect_target,
+            "token": auth_token,
             "message": result["message"]
-        }
+        })
+        if auth_token:
+            is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            res.set_cookie(
+                key="access_token",
+                value=auth_token,
+                max_age=3600 * 8,
+                path="/",
+                samesite="lax",
+                secure=is_https
+            )
+        return res
     else:
         # Trường hợp không chính xác hoặc thất bại: Vẫn lưu lại ảnh check-in để Giám thị đối soát
         trang_thai_sv = "Dang xac thuc"
@@ -206,6 +233,7 @@ async def process_face_verification(
         return JSONResponse({
             "success": False,
             "status": result["status"],
+            "method": result.get("method", "EARLY_EXIT_FAIL"),
             "similarity": result["similarity"],
             "image_path": result["image_path"],
             "message": result["message"]
@@ -215,10 +243,13 @@ async def process_face_verification(
 @router.get("", response_class=HTMLResponse)
 async def student_exam_page(
     request: Request,
-    user: dict = Depends(require_role(["SINH_VIEN"])),
     db: Session = Depends(get_db)
 ):
     """Giao diện thi trực tuyến cho sinh viên (Đã xác thực khuôn mặt thành công)"""
+    user = get_current_user(request, db)
+    if not user or user.get("vai_tro") != "SINH_VIEN":
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
     ma_sinh_vien = user["ma_sinh_vien"]
     session_info = get_student_session(db, ma_sinh_vien)
 

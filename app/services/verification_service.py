@@ -75,25 +75,30 @@ def verify_checkin_face(
     status = pipeline_result.get("status")
     similarity = pipeline_result.get("similarity", 0.0)
     num_faces = pipeline_result.get("num_faces", 0)
+    method = pipeline_result.get("method", "SINGLE_MODEL")
+    pipe_msg = pipeline_result.get("message")
 
     if status == "DUNG_NGUOI":
         pct = round(similarity * 100, 1)
+        msg = pipe_msg or f"Xác thực thành công! Khuôn mặt trùng khớp hồ sơ ({pct}%). Đang chuyển vào phòng thi..."
         return {
             "success": True,
             "status": "DUNG_NGUOI",
-            "message": f"Xác thực thành công! Khuôn mặt trùng khớp hồ sơ ({pct}%). Đang chuyển vào phòng thi...",
+            "message": msg,
             "similarity": similarity,
+            "method": method,
             "num_faces": 1,
             "image_path": web_file_path
         }
     elif status == "KHONG_DUNG_NGUOI":
         pct = round(similarity * 100, 1)
-        required_pct = round(threshold * 100, 1)
+        msg = pipe_msg or f"Xác thực thất bại! Khuôn mặt không khớp với hồ sơ thí sinh. Độ tương đồng {pct}%."
         return {
             "success": False,
             "status": "KHONG_DUNG_NGUOI",
-            "message": f"Xác thực thất bại! Khuôn mặt không khớp với hồ sơ thí sinh. Độ tương đồng {pct}% (yêu cầu >= {required_pct}%).",
+            "message": msg,
             "similarity": similarity,
+            "method": method,
             "num_faces": 1,
             "image_path": web_file_path
         }

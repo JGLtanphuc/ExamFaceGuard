@@ -1,4 +1,4 @@
-// Logic phía Client: Chụp ảnh & Xác thực khuôn mặt điểm danh sinh viên (RetinaFace + FaceNet512)
+// Logic phía Client: Chụp ảnh & Xác thực khuôn mặt điểm danh sinh viên
 document.addEventListener("DOMContentLoaded", () => {
   const video = document.getElementById("video-feed");
   const imgPreview = document.getElementById("captured-image-preview");
@@ -13,69 +13,168 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentStream = null;
   let availableDevices = [];
   let selectedDeviceId = null;
-  let currentFacingMode = "user"; // Mặc định camera trước
+  let currentFacingMode = "user"; // Luôn ưu tiên Camera trước (selfie)
   let isProcessing = false;
 
   // Lấy Auth Token
-  const token = window.EXAM_TOKEN || sessionStorage.getItem("access_token") || localStorage.getItem("access_token") || "";
+  const token =
+    window.EXAM_TOKEN ||
+    sessionStorage.getItem("access_token") ||
+    localStorage.getItem("access_token") ||
+    "";
 
-  // 1. Quét danh sách Camera
+  // Hàm nhận diện camera trước từ nhãn thiết bị
+  function isFrontCamera(label) {
+    if (!label) return false;
+    const l = label.toLowerCase();
+    return (
+      l.includes("front") ||
+      l.includes("user") ||
+      l.includes("trước") ||
+      l.includes("truoc") ||
+      l.includes("facetime") ||
+      l.includes("selfie")
+    );
+  }
+
+  // 1. Quét danh sách Camera và tự động ưu tiên Camera trước
   async function enumerateCameras() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices)
+      return;
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      availableDevices = devices.filter(d => d.kind === "videoinput");
+      availableDevices = devices.filter((d) => d.kind === "videoinput");
 
       if (cameraSelect && availableDevices.length > 0) {
-        cameraSelect.innerHTML = availableDevices.map((d, idx) => {
-          const label = d.label || `Camera ${idx + 1}`;
-          return `<option value="${d.deviceId}">📷 ${label}</option>`;
-        }).join("");
+        // Sắp xếp ưu tiên Camera trước (selfie) lên đầu tiên
+        availableDevices.sort((a, b) => {
+          const aFront = isFrontCamera(a.label);
+          const bFront = isFrontCamera(b.label);
+          if (aFront && !bFront) return -1;
+          if (!aFront && bFront) return 1;
+          return 0;
+        });
+
+        cameraSelect.innerHTML = availableDevices
+          .map((d, idx) => {
+            let label = d.label || `Camera ${idx + 1}`;
+            if (isFrontCamera(label)) {
+              label = "Camera mặt trước (Selfie)";
+            } else if (
+              label.toLowerCase().includes("back") ||
+              label.toLowerCase().includes("environment") ||
+              label.toLowerCase().includes("sau")
+            ) {
+              label =
+                `Camera mặt sau ${availableDevices.length > 2 ? idx + 1 : ""}`.trim();
+            }
+            return `<option value="${d.deviceId}">📷 ${label}</option>`;
+          })
+          .join("");
+
+        // Đồng bộ chọn đúng camera đang kích hoạt
+        const currentTrack = currentStream
+          ? currentStream.getVideoTracks()[0]
+          : null;
+        const currentSettings =
+          currentTrack && currentTrack.getSettings
+            ? currentTrack.getSettings()
+            : {};
+        if (currentSettings.deviceId) {
+          cameraSelect.value = currentSettings.deviceId;
+        } else if (availableDevices.length > 0) {
+          cameraSelect.value = availableDevices[0].deviceId;
+        }
       }
 
       if (availableDevices.length <= 1 && btnSwitchCam) {
         btnSwitchCam.style.display = "none";
+      } else if (btnSwitchCam) {
+        btnSwitchCam.style.display = "flex";
       }
     } catch (err) {
       console.warn("Không thể quét thiết bị camera:", err);
     }
   }
 
-  // 2. Khởi động Camera
+  // 2. Khởi động Camera (Tự động mở trực tiếp Camera trước trên Mobile & Laptop)
   async function startCamera(deviceId = null, facingMode = "user") {
     if (currentStream) {
-      currentStream.getTracks().forEach(track => track.stop());
+      currentStream.getTracks().forEach((track) => track.stop());
+      currentStream = null;
     }
 
-    const constraints = {
-      audio: false,
-      video: deviceId
-        ? { deviceId: { exact: deviceId } }
-        : {
-            facingMode: facingMode,
-            width: { ideal: 640 },
-            height: { ideal: 480 }
-          }
+    currentFacingMode = facingMode;
+
+    const videoConstraints = {
+      width: { ideal: 640 },
+      height: { ideal: 480 },
     };
 
-    try {
-      currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-      video.srcObject = currentStream;
-      video.style.display = "block";
-      imgPreview.style.display = "none";
-      if (faceGuide) faceGuide.style.display = "flex";
+    if (deviceId) {
+      videoConstraints.deviceId = { exact: deviceId };
+    } else {
+      videoConstraints.facingMode = { ideal: facingMode };
+    }
 
-      // Sau khi được cấp quyền, quét lại danh sách thiết bị có label
-      if (availableDevices.length === 0 || !availableDevices[0].label) {
-        await enumerateCameras();
-      }
+    try {
+      currentStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: videoConstraints,
+      });
     } catch (err) {
-      console.error("Lỗi mở camera:", err);
-      showFeedback("error", "⚠️ Không thể truy cập Camera. Vui lòng cấp quyền Camera trên trình duyệt và thử lại.");
+      console.warn("Thử fallback trực tiếp với facingMode:", facingMode, err);
+      try {
+        currentStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: deviceId
+            ? { deviceId: { exact: deviceId } }
+            : { facingMode: facingMode },
+        });
+      } catch (fallbackErr) {
+        try {
+          currentStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: true,
+          });
+        } catch (finalErr) {
+          console.error("Lỗi mở camera:", finalErr);
+          showFeedback(
+            "error",
+            "⚠️ Không thể truy cập Camera. Vui lòng cấp quyền Camera trên trình duyệt và thử lại.",
+          );
+          return;
+        }
+      }
+    }
+
+    if (!currentStream) return;
+
+    video.srcObject = currentStream;
+    video.style.display = "block";
+    imgPreview.style.display = "none";
+    if (faceGuide) faceGuide.style.display = "flex";
+
+    // Cập nhật danh sách camera sau khi có quyền truy cập
+    await enumerateCameras();
+
+    // Tự động chuyển thẳng vào Camera trước nếu điện thoại mở nhầm camera sau
+    if (!deviceId && availableDevices.length > 0) {
+      const activeTrack = currentStream.getVideoTracks()[0];
+      const activeSettings =
+        activeTrack && activeTrack.getSettings ? activeTrack.getSettings() : {};
+      const activeId = activeSettings.deviceId;
+
+      const frontDevice = availableDevices.find((d) => isFrontCamera(d.label));
+      if (frontDevice && activeId && frontDevice.deviceId !== activeId) {
+        selectedDeviceId = frontDevice.deviceId;
+        if (cameraSelect) cameraSelect.value = frontDevice.deviceId;
+        await startCamera(frontDevice.deviceId, "user");
+      }
     }
   }
 
-  // 3. Hiển thị thông báo phản hồi
+  // 3. Hiển thị thông báo phản hồi (không hiện tên model)
   function showFeedback(type, message) {
     if (!feedbackBox) return;
     feedbackBox.className = `status-feedback-box ${type}`;
@@ -94,7 +193,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // 4. Chụp ảnh từ Camera feed
   function capturePhoto() {
     if (!video || video.readyState < 2) {
-      showFeedback("error", "Camera chưa sẵn sàng. Vui lòng đợi trong giây lát.");
+      showFeedback(
+        "error",
+        "Camera chưa sẵn sàng. Vui lòng đợi trong giây lát.",
+      );
       return null;
     }
 
@@ -136,7 +238,8 @@ document.addEventListener("DOMContentLoaded", () => {
     btnCapture.innerHTML = `<span>⏳ Đang xác thực...</span>`;
     btnRetake.style.display = "none";
 
-    showFeedback("loading", "Đang nhận diện và đối sánh khuôn mặt bằng RetinaFace + FaceNet512...");
+    // Chỉ hiện "Đang xác thực...", không hiện tên model AI
+    showFeedback("loading", "Đang xác thực...");
 
     try {
       const headers = { "Content-Type": "application/json" };
@@ -145,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/student/api/verify-face", {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ image_base64: base64Image })
+        body: JSON.stringify({ image_base64: base64Image }),
       });
 
       let result = null;
@@ -157,24 +260,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (res.ok && result && result.success) {
         const pct = (result.similarity * 100).toFixed(1);
-        showFeedback("success", `✅ Xác thực thành công (${pct}%). Đang chuyển vào phòng thi...`);
+        showFeedback(
+          "success",
+          `✅ Xác thực thành công (${pct}%). Đang chuyển vào phòng thi...`,
+        );
+
+        const serverToken = (result && result.token) || token;
+        let redirectUrl = (result && result.redirect_url) || "/student";
+        if (serverToken && !redirectUrl.includes("token=")) {
+          redirectUrl +=
+            (redirectUrl.includes("?") ? "&" : "?") +
+            "token=" +
+            encodeURIComponent(serverToken);
+        }
+
+        if (serverToken) {
+          try {
+            sessionStorage.setItem("access_token", serverToken);
+            localStorage.setItem("access_token", serverToken);
+          } catch (e) {}
+        }
 
         // Dừng camera và chuyển trang sau 1 giây
         setTimeout(() => {
           if (currentStream) {
-            currentStream.getTracks().forEach(t => t.stop());
+            currentStream.getTracks().forEach((t) => t.stop());
           }
-          window.location.href = result.redirect_url || "/student";
+          window.location.href = redirectUrl;
         }, 1000);
       } else {
-        const errorMsg = (result && (result.message || result.error || result.detail)) || "Xác thực không thành công. Vui lòng chụp lại.";
+        const errorMsg =
+          (result && (result.message || result.error || result.detail)) ||
+          "Xác thực không thành công. Vui lòng chụp lại.";
         showFeedback("error", `❌ ${errorMsg}`);
         btnRetake.style.display = "flex";
         btnCapture.style.display = "none";
       }
     } catch (err) {
       console.error("Lỗi gửi xác thực:", err);
-      showFeedback("error", "❌ Lỗi kết nối mạng hoặc máy chủ. Vui lòng thử lại.");
+      showFeedback(
+        "error",
+        "❌ Lỗi kết nối mạng hoặc máy chủ. Vui lòng thử lại.",
+      );
       btnRetake.style.display = "flex";
       btnCapture.style.display = "none";
     } finally {
@@ -199,14 +326,41 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cameraSelect) {
     cameraSelect.addEventListener("change", (e) => {
       selectedDeviceId = e.target.value;
-      startCamera(selectedDeviceId);
+      const selectedOption = cameraSelect.options[cameraSelect.selectedIndex];
+      const txt = (selectedOption ? selectedOption.text : "").toLowerCase();
+      if (txt.includes("sau") || txt.includes("back")) {
+        currentFacingMode = "environment";
+      } else {
+        currentFacingMode = "user";
+      }
+      startCamera(selectedDeviceId, currentFacingMode);
     });
   }
 
   if (btnSwitchCam) {
-    btnSwitchCam.addEventListener("click", () => {
+    btnSwitchCam.addEventListener("click", async () => {
+      // Đổi qua lại giữa camera trước và sau
       currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
-      startCamera(null, currentFacingMode);
+
+      let targetDev = null;
+      if (currentFacingMode === "user") {
+        targetDev = availableDevices.find((d) => isFrontCamera(d.label));
+      } else {
+        targetDev = availableDevices.find((d) => {
+          const l = (d.label || "").toLowerCase();
+          return (
+            l.includes("back") || l.includes("environment") || l.includes("sau")
+          );
+        });
+      }
+
+      if (targetDev) {
+        selectedDeviceId = targetDev.deviceId;
+        if (cameraSelect) cameraSelect.value = selectedDeviceId;
+        await startCamera(selectedDeviceId, currentFacingMode);
+      } else {
+        await startCamera(null, currentFacingMode);
+      }
     });
   }
 
@@ -214,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCapture) btnCapture.addEventListener("click", handleVerifyClick);
   if (btnRetake) btnRetake.addEventListener("click", handleRetakeClick);
 
-  // Bắt đầu
+  // Bắt đầu mở trực tiếp Camera trước
   startCamera();
 });
-
